@@ -34,7 +34,6 @@ class Staff(models.Model):
         ('intern', 'Interne'),
         ('nurse', 'Infirmier'),
     ]
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     type = models.CharField(max_length=20, choices=STAFF_TYPES, default='doctor')
     doctor_order_number = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Numéro d’ordre médecin
@@ -66,10 +65,10 @@ class Staff(models.Model):
             raise ValidationError("Un infirmier doit avoir un numéro d’ordre délivré par l’Ordre des Infirmiers.")
         elif self.type in ['intern', 'idh', 'des'] and not self.student_matricule:
             raise ValidationError("Un interne, IDH ou DES doit avoir un matricule délivré par l’administration.")
-        # Vérifie qu’un seul identifiant est rempli
+        # Permettre une transition temporaire où les deux existent pour 'doctor'
         identifiers = [self.doctor_order_number, self.nurse_order_number, self.student_matricule]
-        if sum(1 for x in identifiers if x) > 1:
-            raise ValidationError("Un seul identifiant (numéro d’ordre ou matricule) doit être défini.")
+        if sum(1 for x in identifiers if x) > 1 and self.type != 'doctor':
+            raise ValidationError("Un seul identifiant doit être défini, sauf lors de la transition vers médecin.")
 
     class Meta:
         verbose_name = "Personnel"
@@ -112,6 +111,9 @@ def track_status_change(sender, instance, **kwargs):
                 old_type=old_instance.type,
                 new_type=instance.type
             )
-            # Supprimer le superviseur uniquement pour 'doctor'
+            # Supprimer le superviseur et gérer la transition pour 'doctor'
             if instance.type == 'doctor':
                 instance.supervisor = None
+                # Si doctor_order_number est fourni, effacer student_matricule
+                if instance.doctor_order_number:
+                    instance.student_matricule = None

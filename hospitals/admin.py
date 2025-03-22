@@ -85,8 +85,21 @@ class StaffAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             self.message_user(request, "Action réservée aux superusers.", level='error')
             return
-        updated = queryset.exclude(type='doctor').update(type='doctor', supervisor=None)
-        self.message_user(request, f"{updated} membre(s) promu(s) en médecin.")
+        updated = 0
+        for staff in queryset.exclude(type='doctor'):
+            if staff.type in ['intern', 'idh', 'des'] and not staff.doctor_order_number:
+                self.message_user(request, f"Le numéro d’ordre est requis pour promouvoir {staff} en médecin.", level='warning')
+                continue
+            staff.type = 'doctor'
+            staff.supervisor = None
+            if staff.doctor_order_number:
+                staff.student_matricule = None  # Efface le matricule si numéro d’ordre fourni
+            staff.save()  # Sauvegarde pour déclencher le signal
+            updated += 1
+        if updated > 0:
+            self.message_user(request, f"{updated} membre(s) promu(s) en médecin.")
+        elif updated == 0:
+            self.message_user(request, "Aucun membre promu. Vérifiez les numéros d’ordre.", level='warning')
 
     def promote_to_des(self, request, queryset):
         if not request.user.is_superuser:

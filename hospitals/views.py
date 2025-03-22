@@ -4,4 +4,10 @@ from .models import Hospital, Staff, Speciality, Affiliation, StaffStatusHistory
 # Create your views here. 
 
 def index(request):
-    pass
+    return render(request, "index.html")
+
+def hospital_list(request):
+    return render(request, "hospital/hospital_list.html")
+
+def staff_list(request):
+    return render(request, "staff/staff_list.html")

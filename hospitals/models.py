@@ -1,9 +1,9 @@
-# hospitals/models.py
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-import uuid
+from django.core.exceptions import ValidationError
+
 class Speciality(models.Model):
     name = models.CharField(max_length=100, unique=True)
     def __str__(self):
@@ -29,22 +29,48 @@ class Hospital(models.Model):
 class Staff(models.Model):
     STAFF_TYPES = [
         ('doctor', 'Médecin'),
-        ('nurse', 'Infirmier'),
+        ('des', 'Docteur En Spécialisation'),
+        ('idh', 'Interne Des Hôpitaux'),
         ('intern', 'Interne'),
-        ('idh', 'Interne Des Hôpitaux'),  # Internes liés à un hôpital
-        ('des', 'Docteur En Spécialisation'),  # Ajout des DES
+        ('nurse', 'Infirmier'),
     ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    num_licence = models.CharField(max_length=100, unique=True, default=uuid.uuid4().hex[:10], blank=True)
     type = models.CharField(max_length=20, choices=STAFF_TYPES, default='doctor')
+    doctor_order_number = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Numéro d’ordre médecin
+    nurse_order_number = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Numéro d’ordre infirmier
+    student_matricule = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Matricule étudiant
     specialities = models.ManyToManyField(Speciality, blank=True)
     hospitals = models.ManyToManyField(Hospital, through='Affiliation')
     phone = models.CharField(max_length=15, blank=True)
     email = models.EmailField(unique=True)
-    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)  # Pour internes, IDH, DES
+    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
         return f"{self.user.username} ({self.get_type_display()})"
-    
+
+    def get_identifier(self):
+        """Retourne l’identifiant selon le type."""
+        if self.type == 'doctor':
+            return self.doctor_order_number or "Non défini"
+        elif self.type == 'nurse':
+            return self.nurse_order_number or "Non défini"
+        elif self.type in ['intern', 'idh', 'des']:
+            return self.student_matricule or "Non défini"
+        return "Inconnu"
+
+    def clean(self):
+        """Validation personnalisée selon le type."""
+        if self.type == 'doctor' and not self.doctor_order_number:
+            raise ValidationError("Un médecin doit avoir un numéro d’ordre délivré par l’Ordre des Médecins.")
+        elif self.type == 'nurse' and not self.nurse_order_number:
+            raise ValidationError("Un infirmier doit avoir un numéro d’ordre délivré par l’Ordre des Infirmiers.")
+        elif self.type in ['intern', 'idh', 'des'] and not self.student_matricule:
+            raise ValidationError("Un interne, IDH ou DES doit avoir un matricule délivré par l’administration.")
+        # Vérifie qu’un seul identifiant est rempli
+        identifiers = [self.doctor_order_number, self.nurse_order_number, self.student_matricule]
+        if sum(1 for x in identifiers if x) > 1:
+            raise ValidationError("Un seul identifiant (numéro d’ordre ou matricule) doit être défini.")
+
     class Meta:
         verbose_name = "Personnel"
         verbose_name_plural = "Personnel"
@@ -78,7 +104,7 @@ class StaffStatusHistory(models.Model):
 # Signal pour suivre les transitions de statut
 @receiver(pre_save, sender=Staff)
 def track_status_change(sender, instance, **kwargs):
-    if instance.pk:  # Si l'instance existe déjà (mise à jour)
+    if instance.pk:  # Si l’instance existe déjà (mise à jour)
         old_instance = Staff.objects.get(pk=instance.pk)
         if old_instance.type != instance.type:  # Si le type change
             StaffStatusHistory.objects.create(
@@ -86,6 +112,6 @@ def track_status_change(sender, instance, **kwargs):
                 old_type=old_instance.type,
                 new_type=instance.type
             )
-            # Si devient 'doctor' ou 'des', ajuster le superviseur
-            if instance.type in ['doctor', 'des']:
-                instance.supervisor = None  # Plus besoin de superviseur pour DES ou médecin
+            # Supprimer le superviseur uniquement pour 'doctor'
+            if instance.type == 'doctor':
+                instance.supervisor = None

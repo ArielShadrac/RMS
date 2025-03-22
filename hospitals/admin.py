@@ -1,4 +1,3 @@
-# hospitals/admin.py
 from django.contrib import admin
 from django.db.models import Count
 from .models import Speciality, Hospital, Staff, Affiliation, StaffStatusHistory
@@ -36,7 +35,6 @@ class HospitalAdmin(admin.ModelAdmin):
     ordering = ('name',)
     inlines = [AffiliationInline]
     list_select_related = ('user',)
-    # Champs obligatoires
     fieldsets = (
         (None, {
             'fields': ('user', 'name', 'address', 'phone', 'email')
@@ -44,16 +42,16 @@ class HospitalAdmin(admin.ModelAdmin):
     )
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        form.base_fields['phone'].required = True  # Reflète blank=False
-        form.base_fields['email'].required = True  # Reflète blank=False
+        form.base_fields['phone'].required = True
+        form.base_fields['email'].required = True
         return form
 
 # Admin pour Staff
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('username', 'type', 'email', 'phone', 'supervisor_name', 'hospital_count')
+    list_display = ('username', 'type', 'get_identifier', 'email', 'phone', 'supervisor_name', 'hospital_count')
     list_filter = ('type', 'hospitals')
-    search_fields = ('user__username', 'email', 'num_licence', 'phone')
+    search_fields = ('user__username', 'email', 'doctor_order_number', 'nurse_order_number', 'student_matricule', 'phone')
     ordering = ('user__username',)
     inlines = [AffiliationInline, StatusHistoryInline]
     autocomplete_fields = ('supervisor',)
@@ -61,6 +59,11 @@ class StaffAdmin(admin.ModelAdmin):
     list_per_page = 50
     list_select_related = ('user', 'supervisor', 'supervisor__user')
     list_prefetch_related = ('hospitals', 'specialities')
+    fieldsets = (
+        (None, {
+            'fields': ('user', 'type', 'doctor_order_number', 'nurse_order_number', 'student_matricule', 'specialities', 'supervisor', 'phone', 'email')
+        }),
+    )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -89,7 +92,7 @@ class StaffAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             self.message_user(request, "Action réservée aux superusers.", level='error')
             return
-        updated = queryset.exclude(type__in=['des', 'doctor']).update(type='des', supervisor=None)
+        updated = queryset.exclude(type__in=['des', 'doctor']).update(type='des')
         self.message_user(request, f"{updated} membre(s) promu(s) en DES.")
 
 # Admin pour Affiliation

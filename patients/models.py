@@ -11,7 +11,7 @@ class Patient(models.Model):
     birth_year_approx = models.PositiveIntegerField(null=True, blank=True, verbose_name="Année approximative de naissance  (ex. : né vers 1995)")
     age_in_days = models.PositiveIntegerField(null=True, blank=True, verbose_name="Âge en jours pour bébés de moins de 2 ans")
     estimated_age = models.PositiveIntegerField(null=True, blank=True, verbose_name="Âge estimé en années si rien d'autre") 
-    main_hospital = models.ForeignKey(Hospital, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients')
+    main_hospital = models.ForeignKey(Hospital, on_delete=models.SET_NULL, null=True, blank=True, related_name='patients', verbose_name="Hôpital")
     phone = models.CharField(max_length=15, blank=True, verbose_name="Numéro de téléphone")
     email = models.EmailField(blank=True, verbose_name="Adresse e-mail")
     fhir_data = JSONField(default=dict, blank=True)
@@ -52,6 +52,9 @@ class Patient(models.Model):
         elif self.estimated_age:  # Âge estimé
             return f"~{self.estimated_age} ans"
         return "Inconnu"
+    get_age.short_description = "Âge"
+
+        
 
 class RMS(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='rms_records', verbose_name="Patient")

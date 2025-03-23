@@ -1,11 +1,28 @@
-{% extends 'base/navbar.html' %}
-{% block title %}Accueil{% endblock %}
+{% extends 'base/base.html' %}
+{% block title %}Accueil - RMS{% endblock %}
 {% block content %}
-<h1>Bienvenue sur RMS</h1>
-<p>Système de gestion des résumés médicaux pour le Burkina Faso.</p>
-{% if user.is_authenticated %}
-    <a href="{% url 'patient_list' %}" class="btn btn-primary">Voir les patients</a>
-{% else %}
-    <a href="{% url 'login' %}" class="btn btn-primary">Se connecter</a>
-{% endif %}
+<h1>Accueil RMS (Admin)</h1>
+<h2>Hôpitaux</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Patients</th>
+            <th>Staff</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for hospital in hospitals %}
+        <tr>
+            <td><a href="{% url 'hospital_detail' hospital.pk %}">{{ hospital.name }}</a></td>
+            <td><a href="{% url 'hospital_patient_list' hospital.pk %}">{{ hospital.patient_count }}</a></td>
+            <td><a href="{% url 'hospital_staff_list' hospital.pk %}">{{ hospital.staff_count }}</a></td>
+            <td><a href="{% url 'hospital_detail' hospital.pk %}" class="btn btn-info btn-sm">Détails</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Aucun hôpital.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

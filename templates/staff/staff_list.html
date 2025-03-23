@@ -1,0 +1,39 @@
+{% extends 'base/base.html' %}
+{% block title %}Liste Staff{% endblock %}
+{% block content %}
+<h1>Liste du Personnel </h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prénom(s)</th>
+            <th>Role</th>
+            <th>Numero</th>
+            <th>contact</th>
+            <th>Hôpitaux</th>
+            
+        </tr>
+    </thead>
+    <tbody>
+        {% for staff in staff_list %}
+        <tr>
+            <td> <a href="{% url 'staff_detail' staff.pk %}">{{ staff.name }}</a></td>
+            <td><a href="{% url 'staff_detail' staff.pk %}">{{ staff.first_name }}</a></td>
+            <td>{{ staff.get_type_display }}</td>
+            <td>{{ staff.get_identifier }}</td>
+            <td>{{ staff.phone }}</td>
+            <td>
+                {% for affiliation in staff.affiliation_set.all %}
+                <a href="{% url 'hospital_detail' affiliation.hospital.pk %}">{{ affiliation.hospital.name }}</a>{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                Aucun
+                {% endfor %}
+            </td>
+           
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Aucun staff.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

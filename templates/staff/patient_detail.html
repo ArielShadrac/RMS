@@ -1,0 +1,17 @@
+{% extends 'base/base_staff.html' %}
+{% block title %}Détails - {{ patient.first_name }} {{ patient.last_name }}{% endblock %}
+{% block content %}
+<h1>{{ patient.first_name }} {{ patient.last_name }}</h1>
+<p><strong>Identifiant :</strong> {{ patient.num_identifier }}</p>
+<p><strong>Hôpital principal :</strong> <a href="{% url 'hospital_detail' patient.main_hospital.pk %}">{{ patient.main_hospital.name }}</a></p>
+<h2>Staff en charge</h2>
+<ul>
+    {% for staff in patient_staffs %}
+    <li><a href="{% url 'staff_detail' staff.pk %}">{{ staff.user.username }} ({{ staff.get_type_display }})</a></li>
+    {% empty %}
+    <li>Aucun staff.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'rms_form' patient.pk %}" class="btn btn-primary">Ajouter RMS</a>
+<a href="{% url 'consent_form' patient.pk %}" class="btn btn-secondary">Ajouter Consentement</a>
+{% endblock %}

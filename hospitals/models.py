@@ -34,14 +34,19 @@ class Staff(models.Model):
         ('intern', 'Interne'),
         ('nurse', 'Infirmier'),
     ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    type = models.CharField(max_length=20, choices=STAFF_TYPES, default='doctor')
+    name = models.CharField('Nom', max_length=100,blank=False)
+    first_name = models.CharField('Prénom(s)', max_length=255, blank=False)
+    photo = models.ImageField("Photo de profil", blank=True)
+    sex = models.CharField("Sex", choices=[('Homme', 'Homme'), ("Femmme", "Femme")], max_length=20)
+    type = models.CharField('Rôle',max_length=20, choices=STAFF_TYPES, default='doctor')
     doctor_order_number = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Numéro d’ordre médecin
     nurse_order_number = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Numéro d’ordre infirmier
     student_matricule = models.CharField(max_length=100, unique=True, blank=True, null=True)  # Matricule étudiant
-    specialities = models.ManyToManyField(Speciality, blank=True)
+    specialities = models.OneToOneField(Speciality, blank=True, verbose_name="Specialité", on_delete=Speciality)
     hospitals = models.ManyToManyField(Hospital, through='Affiliation')
-    phone = models.CharField(max_length=15, blank=True)
+    phone = models.CharField(max_length=15, blank=True, verbose_name='Telephone')
     email = models.EmailField(unique=True)
     supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
@@ -56,6 +61,8 @@ class Staff(models.Model):
         elif self.type in ['intern', 'idh', 'des']:
             return self.student_matricule or "Non défini"
         return "Inconnu"
+    
+    get_identifier.short_description ="Numéro"
 
     def clean(self):
         """Validation personnalisée selon le type."""

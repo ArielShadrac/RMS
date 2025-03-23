@@ -3,6 +3,7 @@ from django.db.models import JSONField
 import uuid
 from datetime import date
 from hospitals.models import Hospital, Staff
+
 class Patient(models.Model):
     num_identifier = models.CharField(max_length=20, unique=True, default=uuid.uuid4().hex[:12], editable=False, verbose_name="Numéro d'identification")  # Généré automatiquement
     last_name = models.CharField(max_length=100, blank=False, verbose_name="Nom de famille")

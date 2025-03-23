@@ -49,7 +49,7 @@ class HospitalAdmin(admin.ModelAdmin):
 # Admin pour Staff
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('username', 'type', 'get_identifier', 'email', 'phone', 'supervisor_name', 'hospital_count')
+    list_display = ('name', 'first_name', 'type', 'get_identifier', 'email', 'phone', 'supervisor_name', 'hospital_count', 'specialities')
     list_filter = ('type', 'hospitals')
     search_fields = ('user__username', 'email', 'doctor_order_number', 'nurse_order_number', 'student_matricule', 'phone')
     ordering = ('user__username',)

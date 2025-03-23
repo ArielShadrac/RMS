@@ -1,0 +1,26 @@
+{% extends 'base/base_staff.html' %}
+{% block title %}Détails - {{ staff.name }}{% endblock %}
+{% block content %}
+<p>Nom : {{ staff.name }} </p>
+<p>Prénom : {{ staff.first_name }} </p>
+<p>Role : {{ staff.get_type_display }} </p>
+<p><strong>Identifiant :</strong> {{ staff.get_identifier }}</p>
+<p><strong>Email :</strong> {{ staff.email }}</p>
+<p><strong>Superviseur :</strong> {% if staff.supervisor %}{{ staff.supervisor.user.username }}{% else %}Aucun{% endif %}</p>
+<h2>Patients en charge</h2>
+<ul>
+    {% for patient in staff_patients %}
+    <li><a href="{% url 'staff_patient_detail' patient.pk %}">{{ patient.first_name }} {{ patient.last_name }}</a></li>
+    {% empty %}
+    <li>Aucun patient pris en charge pour l'instant.</li>
+    {% endfor %}
+</ul>
+<h2>Hôpitaux affiliés</h2>
+<ul>
+    {% for affiliation in staff.affiliation_set.all %}
+    <li>Affilié à <a href="{% url 'hospital_detail' affiliation.hospital.pk %}">{{ affiliation.hospital.name }} en tant que {% if affiliation.role == 'doctor'  %} medecin {% elif  affiliation.role != 'doctor'  %}  {{ affiliation.role }} {% else %} {% endif %} au service de {{ staff.specialities }}</a></li>
+    {% empty %}
+    <li>Aucun hôpital.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
